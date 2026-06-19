@@ -1,80 +1,24 @@
 {
   "month": "2026-07",
-  "staff": [
-    "daniel.ferreira@foundever.com"
-  ],
   "organizer": "manager@example.com",
-  "work_days": [
-    0,
-    1,
-    2,
-    3,
-    4
-  ],
-  "time_window": {
-    "start": "09:00",
-    "end": "17:00"
-  },
+  "coaches": [],
+  "agents_by_coach": {},
+  "agent_mapping_xlsx": "CoachAgentMapping.xlsx",
+  "drop_folder": "C:/Users/<manager>/<OneDrive folder>/AutoPeak - Drop",
+  "write_path": "primary",
+  "work_days": [0, 1, 2, 3, 4],
+  "time_window": {"start": "09:00", "end": "17:00"},
   "slot_granularity_minutes": 30,
   "min_gap_minutes": 15,
-  "_notes": "staff is a list of direct-report emails. Each DS meeting is created once per person and invites that person. work_days uses Mon=0..Sun=6. schedule_type: 1=by 10th, 2=11-20th, 3=21st-end, 4=weekly across up to 4 weeks, 5=anytime. Set invite_all_staff:true on an FS meeting to invite the whole team.",
+  "_notes": "PLACEHOLDERS TO FILL IN: organizer (manager's real email), drop_folder (the real local path to the OneDrive-synced Drop library once it's created), write_path ('primary' if the coach came out as organiser in the §7 test, 'fallback' if the manager did). coaches/agents_by_coach are left empty here on purpose -- bridge.merge_mapping_into_cfg() fills them at runtime from CoachAgentMapping.xlsx once that sheet has real rows, so you don't have to duplicate the list by hand. schedule_type: 1=by 10th, 2=11-20th, 3=21st-end, 4=weekly across up to 4 weeks, 5=anytime. population: 'manager' (manager's own meeting), 'coaches' (one per coach, on manager's calendar), 'agents' (one per agent, on that agent's COACH's calendar).",
   "meetings": [
-    {
-      "name": "Focus KPI Meeting",
-      "category": "FS",
-      "schedule_type": 4,
-      "duration_minutes": 60,
-      "count": 1,
-      "invite_all_staff": false
-    },
-    {
-      "name": "CPA",
-      "category": "DS",
-      "schedule_type": 4,
-      "duration_minutes": 30,
-      "per_staff": 1
-    },
-    {
-      "name": "Initial Agent SKEP",
-      "category": "DS",
-      "schedule_type": 1,
-      "duration_minutes": 30,
-      "per_staff": 1
-    },
-    {
-      "name": "1st Agent SKEP follow up",
-      "category": "DS",
-      "schedule_type": 2,
-      "duration_minutes": 30,
-      "per_staff": 1
-    },
-    {
-      "name": "2nd Agent SKEP follow up",
-      "category": "DS",
-      "schedule_type": 3,
-      "duration_minutes": 30,
-      "per_staff": 1
-    },
-    {
-      "name": "Initial Coach SKEP",
-      "category": "DS",
-      "schedule_type": 2,
-      "duration_minutes": 45,
-      "per_staff": 1
-    },
-    {
-      "name": "Coach SKEP follow up",
-      "category": "DS",
-      "schedule_type": 3,
-      "duration_minutes": 45,
-      "per_staff": 1
-    },
-    {
-      "name": "Coach SKEP Audits",
-      "category": "DS",
-      "schedule_type": 5,
-      "duration_minutes": 30,
-      "per_staff": 1
-    }
+    {"name": "Focus KPI Meeting", "category": "FS", "population": "manager", "schedule_type": 4, "duration_minutes": 60, "count": 4, "invite_all_staff": true},
+    {"name": "CPA", "category": "DS", "population": "agents", "schedule_type": 4, "duration_minutes": 30, "per_staff": 1},
+    {"name": "Initial Agent SKEP", "category": "DS", "population": "agents", "schedule_type": 1, "duration_minutes": 30, "per_staff": 1},
+    {"name": "1st Agent SKEP follow up", "category": "DS", "population": "agents", "schedule_type": 2, "duration_minutes": 30, "per_staff": 1},
+    {"name": "2nd Agent SKEP follow up", "category": "DS", "population": "agents", "schedule_type": 3, "duration_minutes": 30, "per_staff": 1},
+    {"name": "Initial Coach SKEP", "category": "DS", "population": "coaches", "schedule_type": 2, "duration_minutes": 45, "per_staff": 1},
+    {"name": "Coach SKEP follow up", "category": "DS", "population": "coaches", "schedule_type": 3, "duration_minutes": 45, "per_staff": 1},
+    {"name": "Coach SKEP Audits", "category": "DS", "population": "coaches", "schedule_type": 5, "duration_minutes": 30, "per_staff": 1}
   ]
 }
