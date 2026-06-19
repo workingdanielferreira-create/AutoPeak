@@ -9,6 +9,12 @@ already signed into. That is what makes a true double-click experience possible.
 If COM is unavailable (e.g. the machine only has the "new Outlook" which does
 not expose COM), every function degrades gracefully and the caller can fall
 back to `export_ics`, which writes a .ics file the user imports manually.
+
+UNCHANGED for the agents/coaches build: get_busy() and commit() still only
+ever touch the MANAGER's own calendar -- that's the one calendar COM can
+reliably drive locally. Coach calendars are handled entirely through
+bridge.py + Power Automate; this file never talks to them. Callers (app.py)
+are responsible for only passing manager-owned proposals into commit().
 """
 
 from __future__ import annotations
@@ -45,7 +51,8 @@ def _app():
 # --------------------------------------------------------------------------- #
 def get_busy(year: int, month: int):
     """Return a list of (start, end) datetime tuples for existing items in the
-    given month, expanding recurring appointments."""
+    given month, expanding recurring appointments. Always the signed-in
+    manager's own calendar -- see module docstring."""
     from scheduler import Interval
 
     app = _app()
@@ -84,7 +91,11 @@ def commit(proposals, category_prefix=True, reminder_minutes=15,
     """Create each proposal in Outlook. If a proposal has attendees and
     send_invites is True, it is created as a meeting request and sent so the
     staff members receive an invitation; otherwise it is saved as a plain
-    appointment. busy_status: 2 = Busy."""
+    appointment. busy_status: 2 = Busy.
+
+    Pass ONLY manager-owned proposals here (owner == cfg's organizer) -- this
+    always writes to the signed-in user's own calendar, regardless of what a
+    proposal's `owner` field says."""
     app = _app()
     created, invited = 0, 0
     for p in proposals:
@@ -96,7 +107,7 @@ def commit(proposals, category_prefix=True, reminder_minutes=15,
         appt.ReminderSet = True
         appt.ReminderMinutesBeforeStart = reminder_minutes
         appt.BusyStatus = busy_status
-        appt.Body = (f"Auto-scheduled by Monthly Scheduler.\n"
+        appt.Body = (f"Auto-scheduled by AutoPeak.\n"
                      f"Category: {p.category} | Schedule type: {p.schedule_type}")
 
         attendees = getattr(p, "attendees", []) or []
@@ -118,25 +129,29 @@ def commit(proposals, category_prefix=True, reminder_minutes=15,
 # Fallback: write a standard .ics the user can import into any calendar
 # --------------------------------------------------------------------------- #
 def export_ics(proposals, path: str, organizer: str | None = None):
+    """organizer is the default; if a proposal has its own `owner` set (the
+    agents/coaches build), that takes precedence per-event so a mixed-owner
+    export still tags each meeting with the right host."""
     def fmt(dt: datetime) -> str:
         return dt.strftime("%Y%m%dT%H%M%S")
 
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0",
-             "PRODID:-//MonthlyScheduler//EN", "CALSCALE:GREGORIAN",
+             "PRODID:-//AutoPeak//EN", "CALSCALE:GREGORIAN",
              "METHOD:REQUEST"]
     stamp = datetime.now().strftime("%Y%m%dT%H%M%SZ")
     for i, p in enumerate(proposals):
         lines += [
             "BEGIN:VEVENT",
-            f"UID:msched-{i}-{fmt(p.start)}@local",
+            f"UID:autopeak-{i}-{fmt(p.start)}@local",
             f"DTSTAMP:{stamp}",
             f"DTSTART:{fmt(p.start)}",
             f"DTEND:{fmt(p.end)}",
             f"SUMMARY:[{p.category}] {p.name}",
             f"DESCRIPTION:Auto-scheduled. Type {p.schedule_type}.",
         ]
-        if organizer:
-            lines.append(f"ORGANIZER:mailto:{organizer}")
+        event_organizer = getattr(p, "owner", None) or organizer
+        if event_organizer:
+            lines.append(f"ORGANIZER:mailto:{event_organizer}")
         for email in (getattr(p, "attendees", []) or []):
             lines.append(
                 "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;"
